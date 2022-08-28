@@ -1,10 +1,9 @@
 # MandyMusic 2022 by Pycharm.
 
-pygame - 音乐播放器
+2022/08/28 - pygame - 音乐播放器
 
 ---
 
-- Time : 2022/08/28
 - Author : YU.J.P
 
 ---
