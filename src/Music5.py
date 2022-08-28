@@ -1,11 +1,11 @@
 #
 # MandyMusic 2022 by Pycharm.
-# Time : 2022/08/28
+# Time : 2022/08/29
 # Author : YU.J.P
 #
 
 """
-    版本: V1.0.3
+    版本: V1.0.4
     基本功能:
         1.音乐音量 增减 控制；
         2.音乐 暂停/继续 播放；
@@ -21,13 +21,15 @@
         12.自动播放的三种模式 列表循环 单曲循环 随机播放；
         13.播放 上一曲/下一曲 可以有 随机/列表 播放；
         14.播放模式图形加载 鼠标点击；
+        15.优化鼠标点击 鼠标点击抖动的问题；
+        16.鼠标在特定按钮上会让光标改变样式；
+        17.新增图形组件 播放列表 音量 设置；
+        18.背景图片 简洁清新；
+        19.播放进度条显示；
+        20.进度条的拖动 播放时间自动切换；
     更新内容 :
-        - 优化鼠标电机点击 鼠标点击抖动的问题；
-        - 鼠标在特定按钮上会让光标改变样式；
-        - 新增图形组件 播放列表 音量 设置；
-        - 背景图片 简洁清新；
+        -
     需求：
-        - 播放进度条显示 以及进度条的拖动 播放时间自动切换；
         - 完善新的歌曲类 即每首歌曲需要专门管理 歌曲所有相关 便于管理和展示；
         - 简单显示歌词 - 自定义；
         -
@@ -42,7 +44,7 @@ import pygame  # 游戏引擎
 from mutagen.mp3 import MP3  # 获取mp3总时长
 
 # 全局变量
-VERSION = 'MandyMusic V1.0.3'
+VERSION = 'MandyMusic V1.0.4'
 DEFAULT_HEIGHT = 16 * 30  # 默认窗口高度
 DEFAULT_WIDTH = 16 * 50  # 默认窗口宽度
 COLOR_BACKGROUND = pygame.Color(3, 25, 62)  # 背景颜色 RGB合成颜色 (156, 191, 238) (221, 227, 247) (202, 231, 255)
@@ -59,7 +61,7 @@ PLAY_SIZE_FONT = 32  # 播放信息显示字体大小
 GETTEXT_X, GETTEXT_Y = 5, 5  # 提示文字 x y 坐标
 PLAY_INFO_X, PLAY_INFO_Y = 16 * 14, 16 * 4 # 播放信息显示 x y 坐标
 VOLUME_X, VOLUME_Y = 16 * 40, 5  # 音量文字 x y 坐标
-TIME_X, TIME_Y = 16 * 10, 16 * 24  # 播放时间显示 x y 坐标
+TIME_X, TIME_Y = 16 * 9, 16 * 24 - 4  # 播放时间显示 x y 坐标
 PLAY_STOP_X, PLAY_STOP_Y = 16 * 24, 16 * 26  # 播放暂停组件 x y 坐标
 LAST_X, LAST_Y = 16 * 20, 16 * 26  # 上一曲组件 x y 坐标
 NEXT_X, NEXT_Y = 16 * 28, 16 * 26  # 下一曲组件 x y 坐标
@@ -67,6 +69,7 @@ PLAY_PATTERN_X, PLAY_PATTERN_Y = 16 * 16, 16 * 26  # 播放模式组件 x y 坐�
 PLAYLIST_X, PLAYLIST_Y = 16 * 32, 16 * 26  # 播放列表组件 x y 坐标
 PLAYSOUND_X, PLAYSOUND_Y = 16 * 36, 16 * 26  # 播放音量组件 x y 坐标
 PLAY_SETTING_X, PLAY_SETTING_Y = 16 * 12, 16 * 26  # 播放设置组件 x y 坐标
+PROGRESS_BAR_X, PROGRESS_BAR_Y = 200, 16 * 24 # 播放进度条显示 x y 坐标
 
 FILENAME = 'musics'  # 音乐存储文件夹
 DELAY = 0.01  # 循环延时时间
@@ -92,6 +95,8 @@ class Music:
         MainMusic.musicTimeInfo.getStringOfTime(MainMusic.musicTime)
         # 改变播放状态
         MainMusic.isPlay = False
+        # 更改进度条调节标志
+        MainMusic.isUpdateTime = False
         # 播放音乐
         pygame.mixer.music.play(loops=0)  # 单独播放一次
 
@@ -171,8 +176,6 @@ class PlayAndStop():
     def __init__(self, left, top):
         # 图片集
         self.images = {
-            # False: pygame.image.load('components/standerd/Player_Play.gif'),
-            # True: pygame.image.load('components/standerd/Player_Stop.gif')
             False: pygame.image.load('components/mini/Player_Play_mini.gif'),
             True: pygame.image.load('components/mini/Player_Stop_mini.gif')
         }
@@ -287,6 +290,54 @@ class PlaySetting:
         MainMusic.window.blit(self.image, self.rect)
 
 
+# 播放进度条小组件
+class ProgressBar:
+    def __init__(self, left, top):
+        # 单图
+        self.image = pygame.image.load('components/mini/Player_ProgressBar_mini.gif')
+        # 组件所在的区域 rect
+        self.rect = self.image.get_rect()
+        # 指定组件初始化位置,分别是x,y轴的位置
+        self.rect.left = left
+        self.rect.top = top
+
+    # 组件展示
+    def displayProgressBar(self):
+        # 将组件加入到窗口中
+        MainMusic.window.blit(self.image, self.rect)
+
+# 播放进度条指示点小组件
+class ProgressBoll:
+    def __init__(self, left, top):
+        # 单图
+        self.image = pygame.image.load('components/mini/Player_ProgressBoll_mini.gif')
+        # 组件所在的区域 rect
+        self.rect = self.image.get_rect()
+        # 指定组件初始化位置,分别是x,y轴的位置
+        self.rect.left = left
+        self.rect.top = top
+
+
+    # 更新指示点位置
+    def setLeft(self):
+        # 导入常量
+        global PROGRESS_BAR_X
+        # 播放完归位
+        if MainMusic.isOver:
+            self.rect.left = PROGRESS_BAR_X
+        else:
+            # 根据时间进度加载位置
+            percentage = MainMusic.playTime / MainMusic.musicTime
+            self.rect.left = PROGRESS_BAR_X + int(384 * percentage)
+
+            # 组件展示
+    def displayProgressBoll(self):
+        # 1.更新坐标
+        self.setLeft()
+        # 2.将组件加入到窗口中
+        MainMusic.window.blit(self.image, self.rect)
+
+
 # 主播放类
 class MainMusic():
     window = None  # 播放器主窗口
@@ -305,6 +356,8 @@ class MainMusic():
     musicTime = 0  # 歌曲播放时间
     musicTimeInfo = TimeOfMusic()  # 时间字符串对象
     playTime = 0  # 已经播放时长
+    startPos = 0  # 更新的播放时长
+    isUpdateTime = False  # 是否更新播放位置
     playTimeInfo = TimeOfMusic()  # 时间字符串对象
 
     VolumeValue = 10  # 音量范围 0-100，音量初始值为 10
@@ -316,6 +369,8 @@ class MainMusic():
     thePlayList = None  # 播放列表组件
     thePlaySound = None  # 播放音量组件
     thePlaySetting = None  # 播放设置组件
+    theProgressBar = None  # 进度条组件
+    theProgressBoll = None  # 进度条指示点组件
 
     def __init__(self):
         pass
@@ -349,6 +404,10 @@ class MainMusic():
         MainMusic.thePlaySound = PlaySound(PLAYSOUND_X, PLAYSOUND_Y)
         # 加载设置组件
         MainMusic.thePlaySetting = PlaySetting(PLAY_SETTING_X, PLAY_SETTING_Y)
+        # 加载进度条组件
+        MainMusic.theProgressBar = ProgressBar(PROGRESS_BAR_X, PROGRESS_BAR_Y)
+        # 加载进度指示点组件
+        MainMusic.theProgressBoll = ProgressBoll(PROGRESS_BAR_X, PROGRESS_BAR_Y)
 
     # 将组件加载到窗口中
     def blitComponent(self):
@@ -359,6 +418,8 @@ class MainMusic():
         MainMusic.thePlayList.displayPlayList()
         MainMusic.thePlaySound.displayPlaySound()
         MainMusic.thePlaySetting.displayPlaySetting()
+        MainMusic.theProgressBar.displayProgressBar()
+        MainMusic.theProgressBoll.displayProgressBoll()
 
     # 左上角文字绘制的功能
     def getTextSurface(self, text, font, size, color):
@@ -482,19 +543,24 @@ class MainMusic():
                 NEXT_Y <= mouse_y <= NEXT_Y + MainMusic.theNext.rect.height or \
                 PLAY_PATTERN_X <= mouse_x <= PLAY_PATTERN_X + MainMusic.thePattern.rect.width and \
                 PLAY_PATTERN_Y <= mouse_y <= PLAY_PATTERN_Y + MainMusic.thePattern.rect.height or \
-                PLAYLIST_X <= mouse_x <= PLAYLIST_X + MainMusic.thePattern.rect.width and \
-                PLAYLIST_Y <= mouse_y <= PLAYLIST_Y + MainMusic.thePattern.rect.height or \
-                PLAY_SETTING_X <= mouse_x <= PLAY_SETTING_X + MainMusic.thePattern.rect.width and \
-                PLAY_SETTING_Y <= mouse_y <= PLAY_SETTING_Y + MainMusic.thePattern.rect.height or \
-                PLAYSOUND_X <= mouse_x <= PLAYSOUND_X + MainMusic.thePattern.rect.width and \
-                PLAYSOUND_Y <= mouse_y <= PLAYSOUND_Y + MainMusic.thePattern.rect.height:
-                # 特殊符号
+                PLAYLIST_X <= mouse_x <= PLAYLIST_X + MainMusic.thePlayList.rect.width and \
+                PLAYLIST_Y <= mouse_y <= PLAYLIST_Y + MainMusic.thePlayList.rect.height or \
+                PLAY_SETTING_X <= mouse_x <= PLAY_SETTING_X + MainMusic.thePlaySetting.rect.width and \
+                PLAY_SETTING_Y <= mouse_y <= PLAY_SETTING_Y + MainMusic.thePlaySetting.rect.height or \
+                PLAYSOUND_X <= mouse_x <= PLAYSOUND_X + MainMusic.thePlaySound.rect.width and \
+                PLAYSOUND_Y <= mouse_y <= PLAYSOUND_Y + MainMusic.thePlaySound.rect.height:
+                # 特殊光标
                 pygame.mouse.set_cursor(pygame.cursors.diamond)
+            # 进度条 特殊光标
+            elif PROGRESS_BAR_X <= mouse_x <= PROGRESS_BAR_X + MainMusic.theProgressBar.rect.width and \
+                PROGRESS_BAR_Y <= mouse_y <= PROGRESS_BAR_Y + MainMusic.theProgressBar.rect.height:
+                # 特殊光标
+                pygame.mouse.set_cursor(pygame.cursors.broken_x)
             else:
-                # 原始符号
+                # 原始光标
                 pygame.mouse.set_cursor(pygame.cursors.arrow)
 
-                # 鼠标抬起事件
+            # 鼠标抬起事件
             if event.type == pygame.MOUSEBUTTONUP:
                 # 如果为左键:1,滑轮:2,右键:3
                 if  event.button == 1:
@@ -535,6 +601,16 @@ class MainMusic():
                         PLAY_SETTING_Y <= mouse_y <= PLAY_SETTING_Y + MainMusic.thePattern.rect.height:
                         # 播放上一曲
                         self.playLastMusic()
+                    # 进度条某位置 普通点击
+                    if PROGRESS_BAR_X <= mouse_x <= PROGRESS_BAR_X + MainMusic.theProgressBar.rect.width and \
+                        PROGRESS_BAR_Y <= mouse_y <= PROGRESS_BAR_Y + MainMusic.theProgressBar.rect.height:
+                        # 计算新的开始时间
+                        percentage = (mouse_x - PROGRESS_BAR_X) / MainMusic.theProgressBar.rect.width
+                        MainMusic.startPos = int(percentage * MainMusic.musicTime)
+                        # 更新标志
+                        MainMusic.isUpdateTime = True
+                        # 重新加载音乐 踩坑set_pos() - 播放时间会累计
+                        pygame.mixer.music.play(start=MainMusic.startPos)  # 重新播放 加载新的位置
 
             # 2.2 键盘事件
             # 判断事件类型是否为按键按下，如果是，继续判断按键是哪一个按键，进行对应处理
@@ -570,7 +646,7 @@ class MainMusic():
         exit()  # 结束python解释器
 
     # 开始使用
-    def startGame(self):
+    def startMusic(self):
         # 初始化
         pygame.init()
         # 设置图标
@@ -606,7 +682,12 @@ class MainMusic():
             # 加载组件
             self.blitComponent()
             # 获取歌曲已经播放时间
-            MainMusic.playTime = pygame.mixer.music.get_pos() / 1000
+            if MainMusic.isUpdateTime:
+                # 算上更改前已经播放的时间
+                MainMusic.playTime = MainMusic.startPos + pygame.mixer.music.get_pos() / 1000
+            else:
+                # 普通模式 走到底
+                MainMusic.playTime = pygame.mixer.music.get_pos() / 1000
             # 自动切换下一首
             self.autoPlay()  # 根据模式播放
             # 在循坏中持续完成事件的获取
@@ -625,10 +706,10 @@ class MainMusic():
                 MainMusic.window.blit(self.getTextSurface("%s" % MainMusic.Musics_List[MainMusic.musicNumber][7:-4],
                     PLAY_FONT, PLAY_SIZE_FONT, COLOR_FONT), (PLAY_INFO_X, PLAY_INFO_Y))
             # 音乐时长信息 将绘制文字得到的小画布，放到窗口上
-            MainMusic.window.blit(self.getTextSurface(
-                MainMusic.playTimeInfo.getStringOfTime(MainMusic.playTime)
-                + "=======================" + MainMusic.musicTimeInfo.timeString,
+            MainMusic.window.blit(self.getTextSurface(MainMusic.playTimeInfo.getStringOfTime(MainMusic.playTime),
                 THEME_FONT, TIME_SIZE_FONT, COLOR_FONT), (TIME_X, TIME_Y))
+            MainMusic.window.blit(self.getTextSurface(MainMusic.musicTimeInfo.timeString,
+                THEME_FONT, TIME_SIZE_FONT, COLOR_FONT), (TIME_X + 16 * 28 + 11, TIME_Y))  # 像素点位置
             # 暴力延时
             # time.sleep(DELAY)  # 延时 DELAYs
             # 窗口的刷新
@@ -636,4 +717,4 @@ class MainMusic():
 
 
 if __name__ == '__main__':
-    MainMusic().startGame()  # 开始运行
+    MainMusic().startMusic()  # 开始运行
