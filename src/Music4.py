@@ -21,19 +21,23 @@
         12.自动播放的三种模式 列表循环 单曲循环 随机播放；
         13.播放 上一曲/下一曲 可以有 随机/列表 播放；
         14.播放模式图形加载 鼠标点击；
-    新增功能 :
-        1.全新版本
+    更新内容 :
+        - 优化鼠标电机点击 鼠标点击抖动的问题；
+        - 鼠标在特定按钮上会让光标改变样式；
+        - 新增图形组件 播放列表 音量 设置；
+        - 背景图片 简洁清新；
     需求：
-        1.优化鼠标点击抖动的问题；
-        2.播放进度条显示 以及进度条的拖动；
-        3.完善新的歌曲类 即每首歌曲需要专门管理 歌曲所有相关 便于管理和展示
-        4.简单显示歌词 - 自定义
+        - 播放进度条显示 以及进度条的拖动 播放时间自动切换；
+        - 完善新的歌曲类 即每首歌曲需要专门管理 歌曲所有相关 便于管理和展示；
+        - 简单显示歌词 - 自定义；
 
 """
 import copy  # 拷贝函数
 import os  # 文件输入
 import random  # 随机包
-import pygame  # 游戏引擎安装成功
+import tkinter  # 窗口视窗
+import threading  # 多线程操作
+import pygame  # 游戏引擎
 from mutagen.mp3 import MP3  # 获取mp3总时长
 
 # 全局变量
@@ -41,8 +45,9 @@ VERSION = 'MandyMusic V1.0.3'
 DEFAULT_HEIGHT = 16 * 30  # 默认窗口高度
 DEFAULT_WIDTH = 16 * 50  # 默认窗口宽度
 COLOR_BACKGROUND = pygame.Color(3, 25, 62)  # 背景颜色 RGB合成颜色 (156, 191, 238) (221, 227, 247) (202, 231, 255)
-BACKGROUND_IMAGE = pygame.image.load('images/封茗囧菌.png')
-FONT = 'dengxian'  # 主题字体 默认等线
+BACKGROUND_IMAGE = pygame.transform.scale(pygame.image.load('images/Player_Wallpaper.png'), (800, 480))  # 合适大小
+Singer_IMAGE = pygame.image.load('images/封茗囧菌.png')  # 样例图片
+THEME_FONT = 'dengxian'  # 主题字体 默认等线
 COLOR_FONT = pygame.Color(255, 255, 255)  # 字体颜色 RGB合成颜色 (24, 72, 172) (255, 255, 255)
 PLAY_FONT = 'dengxian'  # 播放显示字体
 
@@ -51,13 +56,16 @@ TIME_SIZE_FONT = 24  # 时间显示字体大小
 PLAY_SIZE_FONT = 32  # 播放信息显示字体大小
 
 GETTEXT_X, GETTEXT_Y = 5, 5  # 提示文字 x y 坐标
-PLAYINFO_X, PLAYINFO_Y = 16 * 14, 16 * 4 # 播放信息显示 x y 坐标
+PLAY_INFO_X, PLAY_INFO_Y = 16 * 14, 16 * 4 # 播放信息显示 x y 坐标
 VOLUME_X, VOLUME_Y = 16 * 40, 5  # 音量文字 x y 坐标
 TIME_X, TIME_Y = 16 * 10, 16 * 24  # 播放时间显示 x y 坐标
-PLAYSTOP_X, PLAYSTOP_Y = 16 * 24, 16 * 26  # 播放暂停组件 x y 坐标
+PLAY_STOP_X, PLAY_STOP_Y = 16 * 24, 16 * 26  # 播放暂停组件 x y 坐标
 LAST_X, LAST_Y = 16 * 20, 16 * 26  # 上一曲组件 x y 坐标
 NEXT_X, NEXT_Y = 16 * 28, 16 * 26  # 下一曲组件 x y 坐标
-PLAYPATTERN_X, PLAYPATTERN_Y = 16 * 16, 16 * 26  # 播放模式组件 x y 坐标
+PLAY_PATTERN_X, PLAY_PATTERN_Y = 16 * 16, 16 * 26  # 播放模式组件 x y 坐标
+PLAYLIST_X, PLAYLIST_Y = 16 * 32, 16 * 26  # 播放列表组件 x y 坐标
+PLAYSOUND_X, PLAYSOUND_Y = 16 * 36, 16 * 26  # 播放音量组件 x y 坐标
+PLAY_SETTING_X, PLAY_SETTING_Y = 16 * 12, 16 * 26  # 播放设置组件 x y 坐标
 
 FILENAME = 'musics'  # 音乐存储文件夹
 DELAY = 0.01  # 循环延时时间
@@ -187,8 +195,6 @@ class LastAndNext:
     def __init__(self, left, top, lastOrNext):
         # 图片集
         self.images = {
-            # False: pygame.image.load('components/standerd/Player_Last.gif'),
-            # True: pygame.image.load('components/standerd/Player_Next.gif')
             False: pygame.image.load('components/mini/Player_Last_mini.gif'),
             True: pygame.image.load('components/mini/Player_Next_mini.gif')
         }
@@ -229,6 +235,57 @@ class PlayPattern:
         MainMusic.window.blit(self.image, self.rect)
 
 
+# 播放列表小组件
+class PlayList:
+    def __init__(self, left, top):
+        # 单图
+        self.image = pygame.image.load('components/mini/Player_List_mini.gif')
+        # 组件所在的区域 rect
+        self.rect = self.image.get_rect()
+        # 指定组件初始化位置,分别是x,y轴的位置
+        self.rect.left = left
+        self.rect.top = top
+
+    # 组件展示
+    def displayPlayList(self):
+        # 将组件加入到窗口中
+        MainMusic.window.blit(self.image, self.rect)
+
+
+# 播放音量小组件
+class PlaySound:
+    def __init__(self, left, top):
+        # 单图
+        self.image = pygame.image.load('components/mini/Player_Sound_mini.gif')
+        # 组件所在的区域 rect
+        self.rect = self.image.get_rect()
+        # 指定组件初始化位置,分别是x,y轴的位置
+        self.rect.left = left
+        self.rect.top = top
+
+    # 组件展示
+    def displayPlaySound(self):
+        # 将组件加入到窗口中
+        MainMusic.window.blit(self.image, self.rect)
+
+
+# 播放设置小组件
+class PlaySetting:
+    def __init__(self, left, top):
+        # 单图
+        self.image = pygame.image.load('components/mini/Player_Setting_mini.gif')
+        # 组件所在的区域 rect
+        self.rect = self.image.get_rect()
+        # 指定组件初始化位置,分别是x,y轴的位置
+        self.rect.left = left
+        self.rect.top = top
+
+    # 组件展示
+    def displayPlaySetting(self):
+        # 将组件加入到窗口中
+        MainMusic.window.blit(self.image, self.rect)
+
+
 # 主播放类
 class MainMusic():
     window = None  # 播放器主窗口
@@ -251,40 +308,56 @@ class MainMusic():
 
     VolumeValue = 10  # 音量范围 0-100，音量初始值为 10
 
-    playAndStop = None  # 播放/暂停 组件
+    thePlayAndStop = None  # 播放/暂停 组件
     theLast = None  # 上一曲 组件
     theNext = None  # 下一曲 组件
     thePattern = None  # 播放模式组件
+    thePlayList = None  # 播放列表组件
+    thePlaySound = None  # 播放音量组件
+    thePlaySetting = None  # 播放设置组件
 
     def __init__(self):
         pass
 
     # 从文件夹中导入文件的方法
     def musicFromFile(self, fileName):
-        Musics = []  # 定义L数组
-        for root, dirs, files in os.walk(fileName):  # 遍历 musics 文件夹
+        # 定义 Musics 列表
+        Musics = []
+        # 遍历 musics 文件夹
+        for root, dirs, files in os.walk(fileName):
             for file in files:
-                if os.path.splitext(file)[1] == '.mp3':  # 找出所有的.mp3文件
-                    Musics.append(os.path.join(root, file))  # 把所有.mp3文件写入 Musics 数组
-
-        return Musics  # 返回 Musics 数组
+                # 找出所有的.mp3文件
+                if os.path.splitext(file)[1] == '.mp3':
+                    # 把所有.mp3文件写入 Musics 数组
+                    Musics.append(os.path.join(root, file))
+        # 返回 Musics 数组
+        return Musics
 
     # 创建组件
     def createComponent(self):
         # 播放暂停组件
-        MainMusic.playAndStop = PlayAndStop(PLAYSTOP_X, PLAYSTOP_Y)
+        MainMusic.thePlayAndStop = PlayAndStop(PLAY_STOP_X, PLAY_STOP_Y)
         # 加载上一曲/下一曲组件
         MainMusic.theLast = LastAndNext(LAST_X, LAST_Y, False)  # 上一曲
         MainMusic.theNext = LastAndNext(NEXT_X, NEXT_Y, True)  # 下一曲
         # 加载播放模式组件
-        MainMusic.thePattern = PlayPattern(PLAYPATTERN_X, PLAYPATTERN_Y, MainMusic.playPattern)
+        MainMusic.thePattern = PlayPattern(PLAY_PATTERN_X, PLAY_PATTERN_Y, MainMusic.playPattern)
+        # 加载播放列表组件
+        MainMusic.thePlayList = PlayList(PLAYLIST_X, PLAYLIST_Y)
+        # 加载播放音量组件
+        MainMusic.thePlaySound = PlaySound(PLAYSOUND_X, PLAYSOUND_Y)
+        # 加载设置组件
+        MainMusic.thePlaySetting = PlaySetting(PLAY_SETTING_X, PLAY_SETTING_Y)
 
     # 将组件加载到窗口中
     def blitComponent(self):
-        MainMusic.playAndStop.displayPlayAndStop()
+        MainMusic.thePlayAndStop.displayPlayAndStop()
         MainMusic.theLast.displayLastAndNext()
         MainMusic.theNext.displayLastAndNext()
         MainMusic.thePattern.displayPlayPattern()
+        MainMusic.thePlayList.displayPlayList()
+        MainMusic.thePlaySound.displayPlaySound()
+        MainMusic.thePlaySetting.displayPlaySetting()
 
     # 左上角文字绘制的功能
     def getTextSurface(self, text, font, size, color):
@@ -391,78 +464,104 @@ class MainMusic():
         # 1.获取所有事件
         eventList = pygame.event.get()
         # 2.对事件进行判断处理（1.点击关闭按钮，2.按下键盘的某个按键）
-        # 2.1 鼠标事件
-        # 获取鼠标点击事件到 mouseButtons 里
-        mouseButtons = pygame.mouse.get_pressed()
-        # 获取鼠标坐标
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        # print('[{0}, {1}]'.format(mouse_x, mouse_y))
-
-        # 判断是否点击了暂停或播放 - 判断是否鼠标的坐标在暂停播放按钮的坐标范围内
-        if PLAYSTOP_X <= mouse_x <= PLAYSTOP_X + MainMusic.playAndStop.rect.width and \
-                PLAYSTOP_Y <= mouse_y <= PLAYSTOP_Y + MainMusic.playAndStop.rect.height:
-            if mouseButtons[0]:  # 如果按下了鼠标左键
-                # 音乐播放/暂停 切换
-                MainMusic.playOrStop(self)
-        # 判断是否点击了上一曲 - 判断是否鼠标的坐标在暂停播放按钮的坐标范围内
-        if LAST_X <= mouse_x <= LAST_X + MainMusic.theLast.rect.width and \
-                LAST_Y <= mouse_y <= LAST_Y + MainMusic.theLast.rect.height:
-            if mouseButtons[0]:  # 如果按下了鼠标左键
-                # 播放上一曲
-                MainMusic.playLastMusic(self)
-        # 判断是否点击了下一曲 - 判断是否鼠标的坐标在暂停播放按钮的坐标范围内
-        if NEXT_X <= mouse_x <= NEXT_X + MainMusic.theNext.rect.width and \
-                NEXT_Y <= mouse_y <= NEXT_Y + MainMusic.theNext.rect.height:
-            if mouseButtons[0]:  # 如果按下了鼠标左键
-                # 播放下一曲
-                MainMusic.playNextMusic(self)
-        # 判断是否点击了模式切换 - 判断是否鼠标的坐标在暂停播放按钮的坐标范围内
-        if PLAYPATTERN_X <= mouse_x <= PLAYPATTERN_X  + MainMusic.thePattern.rect.width and \
-                PLAYPATTERN_Y <= mouse_y <= PLAYPATTERN_Y + MainMusic.thePattern.rect.height:
-            if mouseButtons[0]:  # 如果按下了鼠标左键
-                # 改变播放模式
-                MainMusic.switchPattern(self)
-        # 获取鼠标的偏移量
-        # print(pygame.mouse.get_rel())
-
-        # 2.2 键盘事件
         for event in eventList:
             # 判断event.type 是否QUIT，如果是退出的话，直接调用程序结束方法
             if event.type == pygame.QUIT:
                 self.endUse()
-            # 判断事件类型是否为按键按下，如果是，继续判断按键是哪一个按键，进行对应处理
-            if event.type == pygame.KEYDOWN:
-                if True:
-                    # 判断具体是哪一个按键的处理
-                    if event.key == pygame.K_LEFT:  # 左方向键
-                        print('上一曲')
-                        # 播放上一曲
-                        self.playLastMusic()
-                    elif event.key == pygame.K_RIGHT:  # 右方向键
-                        print('下一曲')
-                        # 播放下一曲
-                        self.playNextMusic()
-                    elif event.key == pygame.K_UP:  # 上方向键
-                        # print('音量 +1')
-                        # 调用音量增加函数
-                        MainMusic.music.addVolume()
-                    elif event.key == pygame.K_DOWN:  # 下方向键
-                        # print('音量 -1')
-                        # 调用音量降低函数
-                        MainMusic.music.subVolume()
-                    elif event.key == pygame.K_SPACE:  # 空格键控制音乐播放
+
+            # 2.1 鼠标事件
+            # 获取鼠标坐标
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            # 根据位置改变改光标 判断是否鼠标的坐标在按钮的坐标范围内
+            if PLAY_STOP_X <= mouse_x <= PLAY_STOP_X + MainMusic.thePlayAndStop.rect.width and \
+                PLAY_STOP_Y <= mouse_y <= PLAY_STOP_Y + MainMusic.thePlayAndStop.rect.height or \
+                LAST_X <= mouse_x <= LAST_X + MainMusic.theLast.rect.width and \
+                LAST_Y <= mouse_y <= LAST_Y + MainMusic.theLast.rect.height or \
+                NEXT_X <= mouse_x <= NEXT_X + MainMusic.theNext.rect.width and \
+                NEXT_Y <= mouse_y <= NEXT_Y + MainMusic.theNext.rect.height or \
+                PLAY_PATTERN_X <= mouse_x <= PLAY_PATTERN_X + MainMusic.thePattern.rect.width and \
+                PLAY_PATTERN_Y <= mouse_y <= PLAY_PATTERN_Y + MainMusic.thePattern.rect.height or \
+                PLAYLIST_X <= mouse_x <= PLAYLIST_X + MainMusic.thePattern.rect.width and \
+                PLAYLIST_Y <= mouse_y <= PLAYLIST_Y + MainMusic.thePattern.rect.height or \
+                PLAY_SETTING_X <= mouse_x <= PLAY_SETTING_X + MainMusic.thePattern.rect.width and \
+                PLAY_SETTING_Y <= mouse_y <= PLAY_SETTING_Y + MainMusic.thePattern.rect.height or \
+                PLAYSOUND_X <= mouse_x <= PLAYSOUND_X + MainMusic.thePattern.rect.width and \
+                PLAYSOUND_Y <= mouse_y <= PLAYSOUND_Y + MainMusic.thePattern.rect.height:
+                # 特殊符号
+                pygame.mouse.set_cursor(pygame.cursors.diamond)
+            else:
+                # 原始符号
+                pygame.mouse.set_cursor(pygame.cursors.arrow)
+
+                # 鼠标抬起事件
+            if event.type == pygame.MOUSEBUTTONUP:
+                # 如果为左键:1,滑轮:2,右键:3
+                if  event.button == 1:
+                    # 判断是否点击了暂停或播放 - 判断是否鼠标的坐标在暂停播放按钮的坐标范围内
+                    if PLAY_STOP_X <= mouse_x <= PLAY_STOP_X + MainMusic.thePlayAndStop.rect.width and \
+                            PLAY_STOP_Y <= mouse_y <= PLAY_STOP_Y + MainMusic.thePlayAndStop.rect.height:
                         # 音乐播放/暂停 切换
                         MainMusic.playOrStop(self)
-                    elif event.key == pygame.K_TAB:  # Tab键控制音乐自动播放模式
-                        # 自动播放模式切换
+                    # 判断是否点击了上一曲 - 判断是否鼠标的坐标在暂停播放按钮的坐标范围内
+                    elif LAST_X <= mouse_x <= LAST_X + MainMusic.theLast.rect.width and \
+                        LAST_Y <= mouse_y <= LAST_Y + MainMusic.theLast.rect.height:
+                        # 播放上一曲
+                        MainMusic.playLastMusic(self)
+                     # 判断是否点击了下一曲 - 判断是否鼠标的坐标在暂停播放按钮的坐标范围内
+                    elif NEXT_X <= mouse_x <= NEXT_X + MainMusic.theNext.rect.width and \
+                        NEXT_Y <= mouse_y <= NEXT_Y + MainMusic.theNext.rect.height:
+                        # 播放下一曲
+                        MainMusic.playNextMusic(self)
+                    # 判断是否点击了模式切换 - 判断是否鼠标的坐标在暂停播放按钮的坐标范围内
+                    elif PLAY_PATTERN_X <= mouse_x <= PLAY_PATTERN_X + MainMusic.thePattern.rect.width and \
+                        PLAY_PATTERN_Y <= mouse_y <= PLAY_PATTERN_Y + MainMusic.thePattern.rect.height:
+                        # 改变播放模式
                         MainMusic.switchPattern(self)
-                        # print("当前模式：", MainMusic.playPattern,"New:", MainMusic.newPattern)
+                    # 判断是否点击了播放列表 - 判断是否鼠标的坐标在暂停播放按钮的坐标范围内
+                    elif PLAYLIST_X <= mouse_x <= PLAYLIST_X + MainMusic.thePattern.rect.width and \
+                        PLAYLIST_Y <= mouse_y <= PLAYLIST_Y + MainMusic.thePattern.rect.height:
+                        # 播放下一曲
+                        MainMusic.playNextMusic(self)
+                    # 判断是否点击了音量按钮 - 判断是否鼠标的坐标在暂停播放按钮的坐标范围内
+                    elif PLAYSOUND_X <= mouse_x <= PLAYSOUND_X + MainMusic.thePattern.rect.width and \
+                        PLAYSOUND_Y <= mouse_y <= PLAYSOUND_Y + MainMusic.thePattern.rect.height:
+                        # 调用音量增加函数
+                        MainMusic.music.addVolume()
+                        # # 调用音量降低函数
+                        # MainMusic.music.subVolume()
+                    # 判断是否点击了设置按钮 - 判断是否鼠标的坐标在暂停播放按钮的坐标范围内
+                    elif PLAY_SETTING_X <= mouse_x <= PLAY_SETTING_X + MainMusic.thePattern.rect.width and \
+                        PLAY_SETTING_Y <= mouse_y <= PLAY_SETTING_Y + MainMusic.thePattern.rect.height:
+                        # 播放上一曲
+                        self.playLastMusic()
+
+            # 2.2 键盘事件
+            # 判断事件类型是否为按键按下，如果是，继续判断按键是哪一个按键，进行对应处理
+            if event.type == pygame.KEYDOWN:
+                # 判断具体是哪一个按键的处理
+                if event.key == pygame.K_LEFT:  # 左方向键
+                    print('上一曲')
+                    # 播放上一曲
+                    self.playLastMusic()
+                elif event.key == pygame.K_RIGHT:  # 右方向键
+                    print('下一曲')
+                    # 播放下一曲
+                    self.playNextMusic()
+                elif event.key == pygame.K_UP:  # 上方向键
+                    # 调用音量增加函数
+                    MainMusic.music.addVolume()
+                elif event.key == pygame.K_DOWN:  # 下方向键
+                    # 调用音量降低函数
+                    MainMusic.music.subVolume()
+                elif event.key == pygame.K_SPACE:  # 空格键控制音乐播放
+                    # 音乐播放/暂停 切换
+                    MainMusic.playOrStop(self)
+                elif event.key == pygame.K_TAB:  # Tab键控制音乐自动播放模式
+                    # 自动播放模式切换
+                    MainMusic.switchPattern(self)
+                    # print("当前模式：", MainMusic.playPattern,"New:", MainMusic.newPattern)
             if event.type == pygame.KEYUP:
-                if True:
-                    # 松开的是方向键，才更改移动状态
-                    if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT \
-                            or event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                        pass
+                pass
 
     # 结束使用
     def endUse(self):
@@ -499,8 +598,10 @@ class MainMusic():
         while True:
             # 给窗口一个填充色
             MainMusic.window.fill(COLOR_BACKGROUND)
+            # 显示背景图片
+            MainMusic.window.blit(BACKGROUND_IMAGE, (0, 0))
             # 显示图片
-            MainMusic.window.blit(BACKGROUND_IMAGE, (16 * 2, 16 * 4))
+            MainMusic.window.blit(Singer_IMAGE, (16 * 2, 16 * 4))
             # 加载组件
             self.blitComponent()
             # 获取歌曲已经播放时间
@@ -509,24 +610,24 @@ class MainMusic():
             self.autoPlay()  # 根据模式播放
             # 在循坏中持续完成事件的获取
             self.getEvent()
-            # 赛况信息 将绘制文字得到的小画布，放到窗口上
+            # 音乐信息 将绘制文字得到的小画布，放到窗口上
             MainMusic.window.blit(self.getTextSurface("本地音乐: %d"
-                % len(MainMusic.Musics_List), FONT, SIZE_FONT, COLOR_FONT),(GETTEXT_X, GETTEXT_Y))
+                % len(MainMusic.Musics_List), THEME_FONT, SIZE_FONT, COLOR_FONT), (GETTEXT_X, GETTEXT_Y))
             # 音量信息 将绘制文字得到的小画布，放到窗口上
             MainMusic.window.blit(self.getTextSurface("音乐音量: %d"
-                % MainMusic.VolumeValue, FONT, SIZE_FONT, COLOR_FONT),(VOLUME_X, VOLUME_Y))
+                % MainMusic.VolumeValue, THEME_FONT, SIZE_FONT, COLOR_FONT), (VOLUME_X, VOLUME_Y))
             # 播放信息 将绘制文字得到的小画布，放到窗口上
             if MainMusic.playPattern == 2:  # 随机列表循环 实现随机播放
                 MainMusic.window.blit(self.getTextSurface("%s" % MainMusic.shuffle_List[MainMusic.musicNumber][7:-4],
-                    PLAY_FONT, PLAY_SIZE_FONT, COLOR_FONT), (PLAYINFO_X, PLAYINFO_Y))
+                    PLAY_FONT, PLAY_SIZE_FONT, COLOR_FONT), (PLAY_INFO_X, PLAY_INFO_Y))
             else:  # 默认列表循环
                 MainMusic.window.blit(self.getTextSurface("%s" % MainMusic.Musics_List[MainMusic.musicNumber][7:-4],
-                    PLAY_FONT, PLAY_SIZE_FONT, COLOR_FONT), (PLAYINFO_X, PLAYINFO_Y))
+                    PLAY_FONT, PLAY_SIZE_FONT, COLOR_FONT), (PLAY_INFO_X, PLAY_INFO_Y))
             # 音乐时长信息 将绘制文字得到的小画布，放到窗口上
             MainMusic.window.blit(self.getTextSurface(
                 MainMusic.playTimeInfo.getStringOfTime(MainMusic.playTime)
-                + " ======================= " + MainMusic.musicTimeInfo.timeString,
-                FONT, TIME_SIZE_FONT, COLOR_FONT), (TIME_X, TIME_Y))
+                + "=======================" + MainMusic.musicTimeInfo.timeString,
+                THEME_FONT, TIME_SIZE_FONT, COLOR_FONT), (TIME_X, TIME_Y))
             # 暴力延时
             # time.sleep(DELAY)  # 延时 DELAYs
             # 窗口的刷新
