@@ -28,7 +28,7 @@
         19.播放进度条显示；
         20.进度条的拖动 播放时间自动切换；
     更新内容 :
-        -
+        - 固定专辑图片大小
         -
     需求：
         - 完善新的歌曲类 即每首歌曲需要专门管理 歌曲所有相关 便于管理和展示；
@@ -49,8 +49,7 @@ VERSION = 'MandyMusic V1.0.4'
 DEFAULT_HEIGHT = 16 * 30  # 默认窗口高度
 DEFAULT_WIDTH = 16 * 50  # 默认窗口宽度
 COLOR_BACKGROUND = pygame.Color(3, 25, 62)  # 背景颜色 RGB合成颜色 (156, 191, 238) (221, 227, 247) (202, 231, 255)
-BACKGROUND_IMAGE = pygame.transform.scale(pygame.image.load('images/Player_Wallpaper.png'), (800, 480))  # 合适大小
-Singer_IMAGE = pygame.image.load('images/封茗囧菌.png')  # 样例图片
+BACKGROUND_IMAGE = pygame.transform.scale(pygame.image.load('../images/background/Player_Wallpaper.png'), (800, 480))  # 合适大小
 THEME_FONT = 'dengxian'  # 主题字体 默认等线
 COLOR_FONT = pygame.Color(255, 255, 255)  # 字体颜色 RGB合成颜色 (24, 72, 172) (255, 255, 255)
 PLAY_FONT = 'dengxian'  # 播放显示字体
@@ -60,7 +59,7 @@ TIME_SIZE_FONT = 24  # 时间显示字体大小
 PLAY_SIZE_FONT = 32  # 播放信息显示字体大小
 
 GETTEXT_X, GETTEXT_Y = 5, 5  # 提示文字 x y 坐标
-PLAY_INFO_X, PLAY_INFO_Y = 16 * 14, 16 * 4 # 播放信息显示 x y 坐标
+PLAY_INFO_X, PLAY_INFO_Y = 16 * 20, 16 * 4 # 播放信息显示 x y 坐标
 VOLUME_X, VOLUME_Y = 16 * 40, 5  # 音量文字 x y 坐标
 TIME_X, TIME_Y = 16 * 9, 16 * 24 - 4  # 播放时间显示 x y 坐标
 PLAY_STOP_X, PLAY_STOP_Y = 16 * 24, 16 * 26  # 播放暂停组件 x y 坐标
@@ -72,7 +71,7 @@ PLAYSOUND_X, PLAYSOUND_Y = 16 * 36, 16 * 26  # 播放音量组件 x y 坐标
 PLAY_SETTING_X, PLAY_SETTING_Y = 16 * 12, 16 * 26  # 播放设置组件 x y 坐标
 PROGRESS_BAR_X, PROGRESS_BAR_Y = 200, 16 * 24 # 播放进度条显示 x y 坐标
 
-FILENAME = 'musics'  # 音乐存储文件夹
+FILENAME = '../musics'  # 音乐存储文件夹
 DELAY = 0.01  # 循环延时时间
 
 
@@ -177,8 +176,8 @@ class PlayAndStop():
     def __init__(self, left, top):
         # 图片集
         self.images = {
-            False: pygame.image.load('components/mini/Player_Play_mini.gif'),
-            True: pygame.image.load('components/mini/Player_Stop_mini.gif')
+            False: pygame.image.load('../components/mini/Player_Play_mini.gif'),
+            True: pygame.image.load('../components/mini/Player_Stop_mini.gif')
         }
         self.image = self.images[False]
         # 组件所在的区域 rect
@@ -200,8 +199,8 @@ class LastAndNext:
     def __init__(self, left, top, lastOrNext):
         # 图片集
         self.images = {
-            False: pygame.image.load('components/mini/Player_Last_mini.gif'),
-            True: pygame.image.load('components/mini/Player_Next_mini.gif')
+            False: pygame.image.load('../components/mini/Player_Last_mini.gif'),
+            True: pygame.image.load('../components/mini/Player_Next_mini.gif')
         }
         self.image = self.images[lastOrNext]
         # 组件所在的区域 rect
@@ -221,9 +220,9 @@ class PlayPattern:
     def __init__(self, left, top, Pattern):
         # 图片集
         self.images = {
-            0: pygame.image.load('components/mini/Player_Order_mini.gif'),
-            1: pygame.image.load('components/mini/Player_Loop_mini.gif'),
-            2: pygame.image.load('components/mini/Player_Random_mini.gif')
+            0: pygame.image.load('../components/mini/Player_Order_mini.gif'),
+            1: pygame.image.load('../components/mini/Player_Loop_mini.gif'),
+            2: pygame.image.load('../components/mini/Player_Random_mini.gif')
         }
         self.image = self.images[Pattern]
         # 组件所在的区域 rect
@@ -244,7 +243,7 @@ class PlayPattern:
 class PlayList:
     def __init__(self, left, top):
         # 单图
-        self.image = pygame.image.load('components/mini/Player_List_mini.gif')
+        self.image = pygame.image.load('../components/mini/Player_List_mini.gif')
         # 组件所在的区域 rect
         self.rect = self.image.get_rect()
         # 指定组件初始化位置,分别是x,y轴的位置
@@ -261,7 +260,7 @@ class PlayList:
 class PlaySound:
     def __init__(self, left, top):
         # 单图
-        self.image = pygame.image.load('components/mini/Player_Sound_mini.gif')
+        self.image = pygame.image.load('../components/mini/Player_Sound_mini.gif')
         # 组件所在的区域 rect
         self.rect = self.image.get_rect()
         # 指定组件初始化位置,分别是x,y轴的位置
@@ -278,7 +277,7 @@ class PlaySound:
 class PlaySetting:
     def __init__(self, left, top):
         # 单图
-        self.image = pygame.image.load('components/mini/Player_Setting_mini.gif')
+        self.image = pygame.image.load('../components/mini/Player_Setting_mini.gif')
         # 组件所在的区域 rect
         self.rect = self.image.get_rect()
         # 指定组件初始化位置,分别是x,y轴的位置
@@ -295,7 +294,7 @@ class PlaySetting:
 class ProgressBar:
     def __init__(self, left, top):
         # 单图
-        self.image = pygame.image.load('components/mini/Player_ProgressBar_mini.gif')
+        self.image = pygame.image.load('../components/mini/Player_ProgressBar_mini.gif')
         # 组件所在的区域 rect
         self.rect = self.image.get_rect()
         # 指定组件初始化位置,分别是x,y轴的位置
@@ -311,7 +310,7 @@ class ProgressBar:
 class ProgressBoll:
     def __init__(self, left, top):
         # 单图
-        self.image = pygame.image.load('components/mini/Player_ProgressBoll_mini.gif')
+        self.image = pygame.image.load('../components/mini/Player_ProgressBoll_mini.gif')
         # 组件所在的区域 rect
         self.rect = self.image.get_rect()
         # 指定组件初始化位置,分别是x,y轴的位置
@@ -347,10 +346,7 @@ class MainMusic():
 
     musicNumber = 0  # 默认第一首
     musicName = ''  # 歌曲名
-    Musics_List = None  # 默认顺序音乐列表
-    shuffle_List = None  # 随机列表
-    playPattern = 0  # 自动播放模式 0：列表循环，1：单曲循环，2：随机播放
-    newPattern = 0  # 新的播放模式 解决切换模式改列表的问题
+    SingerImage = pygame.transform.scale(pygame.image.load('../images/singers/封茗囧菌.png'), (240, 240))  # 样例图片
     isPlay = True  # 播放标志-暂停/继续
     isOver = False  # 单曲是否播放完成
     music = None  # 创建音乐对象
@@ -360,8 +356,12 @@ class MainMusic():
     startPos = 0  # 更新的播放时长
     isUpdateTime = False  # 是否更新播放位置
     playTimeInfo = TimeOfMusic()  # 时间字符串对象
-
     VolumeValue = 10  # 音量范围 0-100，音量初始值为 10
+
+    Musics_List = None  # 默认顺序音乐列表
+    shuffle_List = None  # 随机列表
+    playPattern = 0  # 自动播放模式 0：列表循环，1：单曲循环，2：随机播放
+    newPattern = 0  # 新的播放模式 解决切换模式改列表的问题
 
     thePlayAndStop = None  # 播放/暂停 组件
     theLast = None  # 上一曲 组件
@@ -552,6 +552,12 @@ class MainMusic():
                 PLAYSOUND_Y <= mouse_y <= PLAYSOUND_Y + MainMusic.thePlaySound.rect.height:
                 # 特殊光标
                 pygame.mouse.set_cursor(pygame.cursors.diamond)
+                # 进度条指示点 特殊光标 优先级比进度条高
+            elif MainMusic.theProgressBoll.rect.left <= mouse_x <= MainMusic.theProgressBoll.rect.left + \
+                 MainMusic.theProgressBoll.rect.width and \
+                 PROGRESS_BAR_Y <= mouse_y <= PROGRESS_BAR_Y + MainMusic.theProgressBar.rect.height:
+                # 特殊光标
+                pygame.mouse.set_cursor(pygame.cursors.tri_left)
             # 进度条 特殊光标
             elif PROGRESS_BAR_X <= mouse_x <= PROGRESS_BAR_X + MainMusic.theProgressBar.rect.width and \
                 PROGRESS_BAR_Y <= mouse_y <= PROGRESS_BAR_Y + MainMusic.theProgressBar.rect.height:
@@ -651,7 +657,7 @@ class MainMusic():
         # 初始化
         pygame.init()
         # 设置图标
-        icon = pygame.image.load('images/FMJJ.jpg')
+        icon = pygame.image.load('../components/icon/FMJJ.jpg')
         pygame.display.set_icon(icon)
         # 创建窗口加载窗口(借鉴官方文档)
         MainMusic.window = pygame.display.set_mode([MainMusic.SCREEN_WIDTH, MainMusic.SCREEN_HEIGHT])
@@ -679,7 +685,7 @@ class MainMusic():
             # 显示背景图片
             MainMusic.window.blit(BACKGROUND_IMAGE, (0, 0))
             # 显示图片
-            MainMusic.window.blit(Singer_IMAGE, (16 * 2, 16 * 4))
+            MainMusic.window.blit(MainMusic.SingerImage, (16 * 2, 16 * 4))
             # 加载组件
             self.blitComponent()
             # 获取歌曲已经播放时间

@@ -38,7 +38,7 @@ VERSION = 'MandyMusic V1.0.2'
 DEFAULT_HEIGHT = 16 * 30  # 默认窗口高度
 DEFAULT_WIDTH = 16 * 50  # 默认窗口宽度
 COLOR_BACKGROUND = pygame.Color(3, 25, 62)  # 背景颜色 RGB合成颜色 (156, 191, 238) (221, 227, 247) (202, 231, 255)
-BACKGROUND_IMAGE = pygame.image.load('../images/封茗囧菌.png')
+BACKGROUND_IMAGE = pygame.image.load('../images/singers/封茗囧菌.png')
 FONT = 'dengxian'  # 主题字体 默认等线
 COLOR_FONT = pygame.Color(255, 255, 255)  # 字体颜色 RGB合成颜色 (24, 72, 172) (255, 255, 255)
 PLAY_FONT = 'dengxian'  # 播放显示字体
@@ -471,7 +471,7 @@ class MainMusic():
         # 初始化
         pygame.init()
         # 设置图标
-        icon = pygame.image.load('../images/FMJJ.jpg')
+        icon = pygame.image.load('../components/icon/FMJJ.jpg')
         pygame.display.set_icon(icon)
         # 创建窗口加载窗口(借鉴官方文档)
         MainMusic.window = pygame.display.set_mode([MainMusic.SCREEN_WIDTH, MainMusic.SCREEN_HEIGHT])

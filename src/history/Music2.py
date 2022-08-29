@@ -378,7 +378,7 @@ class MainMusic():
         # 初始化
         pygame.init()
         # 设置图标
-        icon = pygame.image.load('../images/FMJJ.jpg')
+        icon = pygame.image.load('../components/icon/FMJJ.jpg')
         pygame.display.set_icon(icon)
         # 创建窗口加载窗口(借鉴官方文档)
         MainMusic.window = pygame.display.set_mode([MainMusic.SCREEN_WIDTH, MainMusic.SCREEN_HEIGHT])
